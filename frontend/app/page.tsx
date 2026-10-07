@@ -1,0 +1,82 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { Heart, Search, ShoppingBag, Sparkles, Truck, ShieldCheck, Menu, X, ChevronRight, Plus } from 'lucide-react'
+import { products } from '@/lib/products'
+
+const logo = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/a3aa20aa-f5d7-479d-90e3-d4d2eed70f25.jfif-NhE6C35vPMplIEke2fKs5WBns9xe5Y.jpeg'
+
+const categories = [
+  { name: 'Électronique', subtitle: 'Tech & gadgets', image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=700&q=85' },
+  { name: 'Maison', subtitle: 'Pour votre intérieur', image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=700&q=85' },
+  { name: 'Mode', subtitle: 'Style au quotidien', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=700&q=85' },
+  { name: 'Beauté', subtitle: 'Rituels bien-être', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=700&q=85' },
+]
+
+export default function Page() {
+  const [query, setQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState('Tous')
+  const [liked, setLiked] = useState<number[]>([])
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [fastOrderOpen, setFastOrderOpen] = useState(false)
+  const [orderStatus, setOrderStatus] = useState('')
+  const [orderItems, setOrderItems] = useState<{ id: number; name: string; quantity: number }[]>([])
+  const cartCount = orderItems.reduce((total, item) => total + item.quantity, 0)
+
+  const addToCart = (product: typeof products[number]) => {
+    setOrderItems((current) => {
+      const existing = current.find((item) => item.id === product.id)
+      if (existing) return current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
+      return [...current, { id: product.id, name: product.name, quantity: 1 }]
+    })
+  }
+
+  const openFastOrder = () => {
+    setOrderStatus('')
+    setFastOrderOpen(true)
+  }
+
+  const submitFastOrder = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setOrderStatus('Envoi en cours…')
+    const form = new FormData(event.currentTarget)
+    const response = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.get('name'), phone: form.get('phone'), address: form.get('address'), city: form.get('city'), items: orderItems, total: 0 }) })
+    const result = await response.json()
+    if (!response.ok) return setOrderStatus(result.error ?? 'Vérifiez vos informations.')
+    setOrderStatus(`Commande confirmée · #${String(result.orderId).slice(0, 8).toUpperCase()}`)
+    event.currentTarget.reset()
+  }
+
+  const filtered = useMemo(() => products.filter((p) => {
+    const matchesCategory = activeCategory === 'Tous' || p.category === activeCategory
+    const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase())
+    return matchesCategory && matchesQuery
+  }), [activeCategory, query])
+
+  return (
+    <main className="min-h-screen bg-[#0b0d0f] text-white">
+      <div className="bg-[#e51b2b] px-4 py-2 text-center text-xs font-semibold tracking-[0.15em] text-white">LIVRAISON GRATUITE DÈS 150 DT · PARTOUT EN TUNISIE</div>
+      <header className="border-b border-white/10 bg-[#0b0d0f]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-4 lg:px-8">
+          <button className="lg:hidden" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>
+          <a href="#" className="flex items-center gap-3" aria-label="Vexora accueil"><img src={logo} alt="Vexora" className="size-12 rounded-full object-cover ring-2 ring-[#e51b2b]" /><span className="hidden text-xl font-black tracking-[0.16em] sm:block">VEX<span className="text-[#e51b2b]">ORA</span></span></a>
+          <nav className={`${mobileOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-[105px] z-20 flex-col gap-4 border-b border-white/10 bg-[#111417] px-6 py-5 lg:static lg:flex lg:flex-row lg:items-center lg:border-0 lg:bg-transparent lg:px-0 lg:py-0`}>
+            <a className="text-sm font-semibold text-white" href="#nouveautes">Nouveautés</a><a className="text-sm text-white/60 transition hover:text-white" href="/products">Tous les produits</a><a className="text-sm text-white/60 transition hover:text-white" href="#categories">Catégories</a><a className="text-sm text-white/60 transition hover:text-white" href="#offres">Offres du moment</a>
+          </nav>
+          <div className="ml-auto flex flex-1 justify-end gap-3 sm:gap-5"><label className="hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 sm:flex"><Search className="size-4 text-white/50" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un produit..." className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-white/40" /></label><button className="relative rounded-full p-2 transition hover:bg-white/10" aria-label="Favoris"><Heart className="size-5" /></button><button onClick={openFastOrder} className="relative rounded-full p-2 transition hover:bg-white/10" aria-label="Ouvrir le panier"><ShoppingBag className="size-5" />{cartCount > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#e51b2b] text-[10px] font-bold">{cartCount}</span>}</button></div>
+        </div>
+      </header>
+
+      <section className="relative overflow-hidden border-b border-white/10"><div className="absolute -right-24 -top-24 size-96 rounded-full bg-[#e51b2b]/20 blur-[100px]" /><div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24"><div className="relative z-10"><p className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-[#ff3347]"><Sparkles className="size-4" /> Plus qu&apos;une boutique</p><h1 className="max-w-2xl text-5xl font-black leading-[.95] tracking-[-0.05em] sm:text-7xl">Tout ce qui vous plaît,<br /><span className="text-[#e51b2b]">au même endroit.</span></h1><p className="mt-6 max-w-lg text-base leading-7 text-white/60">Découvrez une sélection pensée pour votre quotidien. Tech, maison, mode et beauté — livrés partout en Tunisie.</p><div className="mt-8 flex flex-wrap gap-3"><a href="#nouveautes" className="rounded-full bg-[#e51b2b] px-6 py-3 text-sm font-bold transition hover:bg-[#ff3347]">Découvrir la sélection <ChevronRight className="ml-1 inline size-4" /></a><a href="#categories" className="rounded-full border border-white/20 px-6 py-3 text-sm font-bold transition hover:bg-white/10">Explorer les catégories</a></div></div><div className="relative mx-auto w-full max-w-lg"><div className="absolute inset-5 rounded-[2rem] bg-[#e51b2b]/20 blur-3xl" /><div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#15191c] p-3 shadow-2xl shadow-black/50"><img src={logo} alt="Logo Vexora avec les catégories de la boutique" className="aspect-square w-full rounded-[1.5rem] object-cover" /></div></div></div></section>
+
+      <section id="categories" className="mx-auto max-w-7xl px-5 py-14 lg:px-8"><div className="mb-7 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e51b2b]">À vous de choisir</p><h2 className="mt-2 text-3xl font-black tracking-tight">Shoppez par catégorie</h2></div><a href="/products" className="hidden text-sm font-semibold text-white/60 hover:text-white sm:block">Voir tout <ChevronRight className="inline size-4" /></a></div><div className="grid grid-cols-2 gap-3 md:grid-cols-4">{categories.map((category) => <button key={category.name} onClick={() => { setActiveCategory(category.name); document.getElementById('nouveautes')?.scrollIntoView({ behavior: 'smooth' }) }} className="group relative aspect-[.9] overflow-hidden rounded-2xl text-left"><img src={category.image} alt={category.name} className="absolute inset-0 size-full object-cover grayscale-[.2] transition duration-500 group-hover:scale-105 group-hover:grayscale-0" /><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" /><div className="absolute bottom-4 left-4"><p className="text-lg font-bold">{category.name}</p><p className="text-xs text-white/60">{category.subtitle}</p></div></button>)}</div></section>
+
+      <section id="nouveautes" className="bg-[#111417] px-5 py-14 lg:px-8"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e51b2b]">Nos favoris</p><h2 className="mt-2 text-3xl font-black tracking-tight">La sélection Vexora</h2></div><div className="flex gap-2 overflow-x-auto pb-1">{['Tous', 'Électronique', 'Maison', 'Mode', 'Beauté'].map((category) => <button key={category} onClick={() => setActiveCategory(category)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeCategory === category ? 'bg-[#e51b2b] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>{category}</button>)}</div></div><div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">{filtered.map((product) => <article key={product.id} className="group"><div className="relative aspect-square overflow-hidden rounded-2xl bg-[#202428]"><img src={product.image} alt={product.name} className="size-full object-cover transition duration-500 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded-full bg-[#e51b2b] px-2.5 py-1 text-[10px] font-bold uppercase">{product.badge}</span><button onClick={() => setLiked((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id])} aria-label={`Ajouter ${product.name} aux favoris`} className={`absolute right-3 top-3 rounded-full p-2 backdrop-blur-md transition ${liked.includes(product.id) ? 'bg-[#e51b2b] text-white' : 'bg-black/35 text-white hover:bg-black/70'}`}><Heart className="size-4" fill={liked.includes(product.id) ? 'currentColor' : 'none'} /></button><button onClick={() => addToCart(product)} className="absolute bottom-3 left-3 right-3 translate-y-2 rounded-full bg-white py-2.5 text-xs font-bold text-black opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100"><Plus className="mr-1 inline size-3" /> Ajouter au panier</button></div><p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-[#e51b2b]">{product.category}</p><h3 className="mt-1 truncate text-sm font-semibold">{product.name}</h3><div className="mt-1 flex items-center gap-2"><span className="font-bold">{product.price}</span>{product.oldPrice && <span className="text-xs text-white/35 line-through">{product.oldPrice}</span>}</div></article>)}</div></div></section>
+
+      <section id="offres" className="mx-auto grid max-w-7xl gap-3 px-5 py-14 sm:grid-cols-3 lg:px-8"><div className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><Truck className="mb-5 size-6 text-[#e51b2b]" /><h3 className="font-bold">Livraison partout</h3><p className="mt-2 text-sm leading-6 text-white/50">Recevez vos commandes rapidement, où que vous soyez en Tunisie.</p></div><div className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><ShieldCheck className="mb-5 size-6 text-[#e51b2b]" /><h3 className="font-bold">Paiement à la livraison</h3><p className="mt-2 text-sm leading-6 text-white/50">Commandez en toute confiance avec notre paiement sécurisé.</p></div><div className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><Sparkles className="mb-5 size-6 text-[#e51b2b]" /><h3 className="font-bold">Qualité sélectionnée</h3><p className="mt-2 text-sm leading-6 text-white/50">Des produits choisis avec soin pour embellir votre quotidien.</p></div></section>
+      {fastOrderOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-4 backdrop-blur-sm sm:items-center"><div role="dialog" aria-modal="true" aria-labelledby="fast-order-title" className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#15191c] p-6 shadow-2xl"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e51b2b]">Sans compte</p><h2 id="fast-order-title" className="mt-1 text-2xl font-black">Commande express</h2><p className="mt-1 text-sm text-white/50">Vérifiez vos articles, puis passez à la page de commande.</p></div><button aria-label="Fermer" onClick={() => setFastOrderOpen(false)} className="rounded-full p-2 hover:bg-white/10"><X /></button></div><div className="mb-5 rounded-2xl bg-white/5 p-4 text-sm"><div className="flex items-center justify-between"><p className="font-bold">Votre panier</p><span className="text-xs text-white/50">{cartCount} article{cartCount > 1 ? 's' : ''}</span></div>{orderItems.length === 0 ? <p className="mt-3 text-white/50">Votre panier est vide.</p> : orderItems.map((item) => <div key={item.id} className="mt-3 flex items-center justify-between gap-3 text-white/70"><span className="min-w-0 flex-1 truncate">{item.name}</span><div className="flex items-center gap-2"><button type="button" aria-label={`Retirer un ${item.name}`} onClick={() => setOrderItems((current) => current.flatMap((value) => value.id === item.id ? value.quantity > 1 ? [{ ...value, quantity: value.quantity - 1 }] : [] : [value]))} className="size-7 rounded-full bg-white/10">−</button><span>× {item.quantity}</span><button type="button" aria-label={`Ajouter un ${item.name}`} onClick={() => setOrderItems((current) => current.map((value) => value.id === item.id ? { ...value, quantity: value.quantity + 1 } : value))} className="size-7 rounded-full bg-white/10">+</button></div></div>)}</div>{orderItems.length > 0 && <a href={`/checkout?items=${encodeURIComponent(orderItems.map((item) => `${item.id}:${item.quantity}`).join(','))}`} onClick={() => setFastOrderOpen(false)} className="mb-3 flex w-full items-center justify-center rounded-full bg-[#e51b2b] px-5 py-3 font-bold transition hover:bg-[#ff3347]">Passer la commande</a>}{orderItems.length > 0 && <form onSubmit={submitFastOrder} className="hidden"><input name="name" required minLength={2} placeholder="Nom complet" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[#e51b2b]" /><input name="phone" required placeholder="Téléphone (ex. 20 123 456)" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[#e51b2b]" /><input name="city" required placeholder="Ville" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[#e51b2b]" /><textarea name="address" required minLength={5} placeholder="Adresse de livraison" className="min-h-20 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[#e51b2b]" /><button type="submit" disabled={orderStatus === 'Envoi en cours…'} className="mt-2 flex items-center justify-center gap-2 rounded-full bg-[#e51b2b] px-5 py-3 font-bold transition hover:bg-[#ff3347] disabled:opacity-60">Confirmer ma commande</button>{orderStatus && <p role="status" className="text-center text-sm text-white/70">{orderStatus}</p>}</form>}</div></div>}
+      <button onClick={openFastOrder} aria-label="Ouvrir le panier" className="fixed bottom-5 right-5 z-40 flex items-center gap-3 rounded-full bg-[#e51b2b] px-5 py-3 font-bold shadow-xl shadow-black/40 transition hover:bg-[#ff3347] hover:scale-105"><ShoppingBag className="size-5" /><span>Panier</span><span className="flex size-6 items-center justify-center rounded-full bg-white text-xs text-[#e51b2b]">{cartCount}</span></button>
+      <footer className="border-t border-white/10 px-5 py-8 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left"><div className="flex items-center gap-3"><img src={logo} alt="Vexora" className="size-9 rounded-full object-cover" /><span className="text-sm font-black tracking-[0.16em]">VEX<span className="text-[#e51b2b]">ORA</span></span></div><p className="text-xs text-white/40">© 2025 Vexora · Plus qu&apos;une boutique · Tunisie</p></div></footer>
+    </main>
+  )
+}
