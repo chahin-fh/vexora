@@ -6,9 +6,7 @@ __v0_jsx-dev-runtime.ts
 .v0-trash/
 .vercel/
 
-# Environment variables
-.env*
-!.env.example
+
 
 # Common ignores
 node_modules/
