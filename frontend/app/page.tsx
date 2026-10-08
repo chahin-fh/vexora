@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Heart, Search, ShoppingBag, Sparkles, Truck, ShieldCheck, Menu, X, ChevronRight, Plus } from 'lucide-react'
-import { products } from '@/lib/products'
+import { useProducts } from '@/lib/products'
 
 const logo = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/a3aa20aa-f5d7-479d-90e3-d4d2eed70f25.jfif-NhE6C35vPMplIEke2fKs5WBns9xe5Y.jpeg'
 
@@ -14,6 +14,7 @@ const categories = [
 ]
 
 export default function Page() {
+  const { products, loading: productsLoading, error: productsError } = useProducts()
   const [query, setQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('Tous')
   const [liked, setLiked] = useState<number[]>([])
@@ -51,11 +52,12 @@ export default function Page() {
     const matchesCategory = activeCategory === 'Tous' || p.category === activeCategory
     const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase())
     return matchesCategory && matchesQuery
-  }), [activeCategory, query])
+  }), [products, activeCategory, query])
 
   return (
     <main className="min-h-screen bg-[#0b0d0f] text-white">
       <div className="bg-[#e51b2b] px-4 py-2 text-center text-xs font-semibold tracking-[0.15em] text-white">LIVRAISON GRATUITE DÈS 150 DT · PARTOUT EN TUNISIE</div>
+      {(productsError || productsLoading) && <p role={productsError ? 'alert' : 'status'} className={`px-5 py-3 text-center text-sm ${productsError ? 'bg-rose-950 text-rose-200' : 'bg-white/5 text-white/60'}`}>{productsError || 'Chargement des produits…'}</p>}
       <header className="border-b border-white/10 bg-[#0b0d0f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-4 lg:px-8">
           <button className="lg:hidden" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>

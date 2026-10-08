@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, CheckCircle2, ShoppingBag } from 'lucide-react'
-import { products } from '@/lib/products'
+import { useProducts } from '@/lib/products'
 
 export default function CheckoutPage() {
+  const { products } = useProducts()
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
   useEffect(() => setSearch(window.location.search), [])
@@ -15,7 +16,7 @@ export default function CheckoutPage() {
       const product = products.find((value) => value.id === id)
       return product ? [{ ...product, quantity: quantity || 1 }] : []
     }) ?? []
-  }, [params.toString()])
+  }, [params.toString(), products])
 
   async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

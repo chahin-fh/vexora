@@ -11,6 +11,7 @@ import {
   KeyRound,
   LogOut,
   MapPin,
+  Package,
   PackageCheck,
   RefreshCw,
   Search,
@@ -18,6 +19,7 @@ import {
   ShoppingBag,
   Truck,
 } from 'lucide-react'
+import AdminProducts from '@/components/admin-products'
 
 type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 type OrderItem = { id: number; name: string; quantity: number }
@@ -85,6 +87,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshVersion, setRefreshVersion] = useState(0)
+  const [activePanel, setActivePanel] = useState<'orders' | 'products'>('orders')
 
   useEffect(() => {
     const savedKey = window.sessionStorage.getItem('vexora-admin-key')
@@ -213,7 +216,8 @@ export default function AdminPage() {
         <aside className="hidden w-60 shrink-0 flex-col bg-[#111411] px-5 py-6 text-white lg:flex">
           <a href="/" className="flex items-center gap-3 text-sm font-black tracking-[0.18em]"><span className="grid size-9 place-items-center rounded-md bg-[#e51b2b]"><ShoppingBag className="size-4" /></span> VEXORA</a>
           <p className="mt-12 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Espace de travail</p>
-          <a href="/admin" className="mt-3 flex items-center gap-3 rounded-md bg-white/10 px-3 py-3 text-sm font-semibold"><ClipboardList className="size-4 text-[#ff5360]" /> Commandes</a>
+          <button type="button" onClick={() => setActivePanel('orders')} className={`mt-3 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold ${activePanel === 'orders' ? 'bg-white/10 text-white' : 'text-white/55 transition hover:bg-white/5 hover:text-white'}`}><ClipboardList className={`size-4 ${activePanel === 'orders' ? 'text-[#ff5360]' : ''}`} /> Commandes</button>
+          <button type="button" onClick={() => setActivePanel('products')} className={`mt-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold ${activePanel === 'products' ? 'bg-white/10 text-white' : 'text-white/55 transition hover:bg-white/5 hover:text-white'}`}><Package className={`size-4 ${activePanel === 'products' ? 'text-[#ff5360]' : ''}`} /> Produits</button>
           <a href="/" className="mt-1 flex items-center gap-3 rounded-md px-3 py-3 text-sm text-white/55 transition hover:bg-white/5 hover:text-white"><ArrowUpRight className="size-4" /> Voir la boutique</a>
           <div className="mt-auto border-t border-white/10 pt-5">
             <p className="text-xs text-white/45">VEXORA · Tunisie</p>
@@ -225,7 +229,7 @@ export default function AdminPage() {
           <header className="flex min-h-[76px] items-center justify-between border-b border-[#dedfd9] bg-white px-5 sm:px-8">
             <div>
               <p className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-[#858a82] sm:block">Vexora / Opérations</p>
-              <h1 className="text-lg font-bold sm:mt-1 sm:text-xl">Commandes</h1>
+              <h1 className="text-lg font-bold sm:mt-1 sm:text-xl">{activePanel === 'orders' ? 'Commandes' : 'Produits'}</h1>
             </div>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => setRefreshVersion((version) => version + 1)} disabled={loading} title="Actualiser les commandes" aria-label="Actualiser les commandes" className="grid size-10 place-items-center rounded-md border border-[#e1e2dc] text-[#555b54] transition hover:bg-[#f4f4f1] disabled:opacity-50"><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /></button>
@@ -233,7 +237,12 @@ export default function AdminPage() {
             </div>
           </header>
 
-          <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9">
+          <nav aria-label="Sections d’administration" className="flex gap-2 border-b border-[#dedfd9] bg-white px-5 py-2 lg:hidden">
+            <button type="button" onClick={() => setActivePanel('orders')} className={`rounded-md px-3 py-2 text-xs font-semibold ${activePanel === 'orders' ? 'bg-[#111411] text-white' : 'text-[#626761]'}`}><ClipboardList className="mr-1.5 inline size-3.5" />Commandes</button>
+            <button type="button" onClick={() => setActivePanel('products')} className={`rounded-md px-3 py-2 text-xs font-semibold ${activePanel === 'products' ? 'bg-[#111411] text-white' : 'text-[#626761]'}`}><Package className="mr-1.5 inline size-3.5" />Produits</button>
+          </nav>
+
+          {activePanel === 'products' ? <AdminProducts adminKey={adminKey} refreshVersion={refreshVersion} /> : <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-9">
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
                 <p className="text-sm text-[#737970]">Vue d’ensemble</p>
@@ -321,7 +330,7 @@ export default function AdminPage() {
               })}
             </div>
             <p className="mt-8 flex items-center gap-2 text-[11px] text-[#858a82]"><Check className="size-3.5 text-emerald-700" /> Les changements de statut sont enregistrés immédiatement.</p>
-          </div>
+          </div>}
         </section>
       </div>
     </main>

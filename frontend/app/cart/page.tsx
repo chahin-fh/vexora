@@ -2,15 +2,16 @@
 
 import { useMemo } from 'react'
 import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
-import { products } from '@/lib/products'
+import { useProducts } from '@/lib/products'
 
 export default function CartPage() {
+  const { products } = useProducts()
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
   const items = useMemo(() => params.get('items')?.split(',').flatMap((entry) => {
     const [id, quantity] = entry.split(':').map(Number)
     const product = products.find((value) => value.id === id)
     return product ? [{ ...product, quantity: quantity || 1 }] : []
-  }) ?? [], [params.toString()])
+  }) ?? [], [params.toString(), products])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const checkoutItems = items.map((item) => `${item.id}:${item.quantity}`).join(',')
 
