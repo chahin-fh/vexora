@@ -9,3 +9,5 @@ npm-debug.log*
 
 # Operating system files
 .DS_Store
+
+uploads/
