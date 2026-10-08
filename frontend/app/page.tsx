@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Heart, Search, ShoppingBag, Sparkles, Truck, ShieldCheck, Menu, X, ChevronRight, Plus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { CheckCircle2, Heart, Search, ShoppingBag, Sparkles, Truck, ShieldCheck, Menu, X, ChevronRight, Plus } from 'lucide-react'
 import { useProducts } from '@/lib/products'
 
 const logo = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/a3aa20aa-f5d7-479d-90e3-d4d2eed70f25.jfif-NhE6C35vPMplIEke2fKs5WBns9xe5Y.jpeg'
@@ -20,9 +20,22 @@ export default function Page() {
   const [liked, setLiked] = useState<number[]>([])
   const [mobileOpen, setMobileOpen] = useState(false)
   const [fastOrderOpen, setFastOrderOpen] = useState(false)
+  const [addedProduct, setAddedProduct] = useState<{ id: number; name: string } | null>(null)
+  const [toastExiting, setToastExiting] = useState(false)
   const [orderStatus, setOrderStatus] = useState('')
   const [orderItems, setOrderItems] = useState<{ id: number; name: string; quantity: number }[]>([])
   const cartCount = orderItems.reduce((total, item) => total + item.quantity, 0)
+
+  useEffect(() => {
+    if (!addedProduct) return
+
+    const exitTimer = window.setTimeout(() => setToastExiting(true), 2400)
+    const dismissTimer = window.setTimeout(() => setAddedProduct(null), 2700)
+    return () => {
+      window.clearTimeout(exitTimer)
+      window.clearTimeout(dismissTimer)
+    }
+  }, [addedProduct])
 
   const addToCart = (product: typeof products[number]) => {
     setOrderItems((current) => {
@@ -30,6 +43,8 @@ export default function Page() {
       if (existing) return current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
       return [...current, { id: product.id, name: product.name, quantity: 1 }]
     })
+    setAddedProduct({ id: product.id, name: product.name })
+    setToastExiting(false)
   }
 
   const openFastOrder = () => {
@@ -58,12 +73,13 @@ export default function Page() {
     <main className="min-h-screen bg-[#0b0d0f] text-white">
       <div className="bg-[#e51b2b] px-4 py-2 text-center text-xs font-semibold tracking-[0.15em] text-white">LIVRAISON GRATUITE DÈS 150 DT · PARTOUT EN TUNISIE</div>
       {(productsError || productsLoading) && <p role={productsError ? 'alert' : 'status'} className={`px-5 py-3 text-center text-sm ${productsError ? 'bg-rose-950 text-rose-200' : 'bg-white/5 text-white/60'}`}>{productsError || 'Chargement des produits…'}</p>}
+      {addedProduct && <div role="status" aria-live="polite" className={`fixed left-1/2 top-4 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 ${toastExiting ? 'animate-toast-exit' : 'animate-toast-enter'}`}><div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#15191c] p-4 text-white shadow-2xl shadow-black/40"><CheckCircle2 className="size-6 shrink-0 text-emerald-400" /><div className="min-w-0 flex-1"><p className="text-sm font-bold">Ajouté au panier</p><p className="truncate text-xs text-white/60">{addedProduct.name}</p></div><button onClick={() => { setAddedProduct(null); openFastOrder() }} className="shrink-0 rounded-full bg-[#e51b2b] px-3 py-2 text-xs font-bold transition hover:bg-[#ff3347]">Voir panier</button></div></div>}
       <header className="border-b border-white/10 bg-[#0b0d0f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-4 lg:px-8">
           <button className="lg:hidden" aria-label="Ouvrir le menu" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? <X /> : <Menu />}</button>
           <a href="#" className="flex items-center gap-3" aria-label="Vexora accueil"><img src={logo} alt="Vexora" className="size-12 rounded-full object-cover ring-2 ring-[#e51b2b]" /><span className="hidden text-xl font-black tracking-[0.16em] sm:block">VEX<span className="text-[#e51b2b]">ORA</span></span></a>
           <nav className={`${mobileOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-[105px] z-20 flex-col gap-4 border-b border-white/10 bg-[#111417] px-6 py-5 lg:static lg:flex lg:flex-row lg:items-center lg:border-0 lg:bg-transparent lg:px-0 lg:py-0`}>
-            <a className="text-sm font-semibold text-white" href="#nouveautes">Nouveautés</a><a className="text-sm text-white/60 transition hover:text-white" href="/products">Tous les produits</a><a className="text-sm text-white/60 transition hover:text-white" href="#categories">Catégories</a><a className="text-sm text-white/60 transition hover:text-white" href="#offres">Offres du moment</a>
+            <a className="text-sm font-semibold text-white" href="#nouveautes">Nouveautés</a><a className="text-sm text-white/60 transition hover:text-white" href="/products">Tous les produits</a>
           </nav>
           <div className="ml-auto flex flex-1 justify-end gap-3 sm:gap-5"><label className="hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 sm:flex"><Search className="size-4 text-white/50" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un produit..." className="w-full bg-transparent py-2 text-sm outline-none placeholder:text-white/40" /></label><button className="relative rounded-full p-2 transition hover:bg-white/10" aria-label="Favoris"><Heart className="size-5" /></button><button onClick={openFastOrder} className="relative rounded-full p-2 transition hover:bg-white/10" aria-label="Ouvrir le panier"><ShoppingBag className="size-5" />{cartCount > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#e51b2b] text-[10px] font-bold">{cartCount}</span>}</button></div>
         </div>
@@ -71,7 +87,6 @@ export default function Page() {
 
       <section className="relative overflow-hidden border-b border-white/10"><div className="absolute -right-24 -top-24 size-96 rounded-full bg-[#e51b2b]/20 blur-[100px]" /><div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-24"><div className="relative z-10"><p className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-[#ff3347]"><Sparkles className="size-4" /> Plus qu&apos;une boutique</p><h1 className="max-w-2xl text-5xl font-black leading-[.95] tracking-[-0.05em] sm:text-7xl">Tout ce qui vous plaît,<br /><span className="text-[#e51b2b]">au même endroit.</span></h1><p className="mt-6 max-w-lg text-base leading-7 text-white/60">Découvrez une sélection pensée pour votre quotidien. Tech, maison, mode et beauté — livrés partout en Tunisie.</p><div className="mt-8 flex flex-wrap gap-3"><a href="#nouveautes" className="rounded-full bg-[#e51b2b] px-6 py-3 text-sm font-bold transition hover:bg-[#ff3347]">Découvrir la sélection <ChevronRight className="ml-1 inline size-4" /></a><a href="#categories" className="rounded-full border border-white/20 px-6 py-3 text-sm font-bold transition hover:bg-white/10">Explorer les catégories</a></div></div><div className="relative mx-auto w-full max-w-lg"><div className="absolute inset-5 rounded-[2rem] bg-[#e51b2b]/20 blur-3xl" /><div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#15191c] p-3 shadow-2xl shadow-black/50"><img src={logo} alt="Logo Vexora avec les catégories de la boutique" className="aspect-square w-full rounded-[1.5rem] object-cover" /></div></div></div></section>
 
-      <section id="categories" className="mx-auto max-w-7xl px-5 py-14 lg:px-8"><div className="mb-7 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e51b2b]">À vous de choisir</p><h2 className="mt-2 text-3xl font-black tracking-tight">Shoppez par catégorie</h2></div><a href="/products" className="hidden text-sm font-semibold text-white/60 hover:text-white sm:block">Voir tout <ChevronRight className="inline size-4" /></a></div><div className="grid grid-cols-2 gap-3 md:grid-cols-4">{categories.map((category) => <button key={category.name} onClick={() => { setActiveCategory(category.name); document.getElementById('nouveautes')?.scrollIntoView({ behavior: 'smooth' }) }} className="group relative aspect-[.9] overflow-hidden rounded-2xl text-left"><img src={category.image} alt={category.name} className="absolute inset-0 size-full object-cover grayscale-[.2] transition duration-500 group-hover:scale-105 group-hover:grayscale-0" /><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" /><div className="absolute bottom-4 left-4"><p className="text-lg font-bold">{category.name}</p><p className="text-xs text-white/60">{category.subtitle}</p></div></button>)}</div></section>
 
       <section id="nouveautes" className="bg-[#111417] px-5 py-14 lg:px-8"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#e51b2b]">Nos favoris</p><h2 className="mt-2 text-3xl font-black tracking-tight">La sélection Vexora</h2></div><div className="flex gap-2 overflow-x-auto pb-1">{['Tous', 'Électronique', 'Maison', 'Mode', 'Beauté'].map((category) => <button key={category} onClick={() => setActiveCategory(category)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeCategory === category ? 'bg-[#e51b2b] text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>{category}</button>)}</div></div><div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">{filtered.map((product) => <article key={product.id} className="group"><div className="relative aspect-square overflow-hidden rounded-2xl bg-[#202428]"><img src={product.image} alt={product.name} className="size-full object-cover transition duration-500 group-hover:scale-105" /><span className="absolute left-3 top-3 rounded-full bg-[#e51b2b] px-2.5 py-1 text-[10px] font-bold uppercase">{product.badge}</span><button onClick={() => setLiked((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id])} aria-label={`Ajouter ${product.name} aux favoris`} className={`absolute right-3 top-3 rounded-full p-2 backdrop-blur-md transition ${liked.includes(product.id) ? 'bg-[#e51b2b] text-white' : 'bg-black/35 text-white hover:bg-black/70'}`}><Heart className="size-4" fill={liked.includes(product.id) ? 'currentColor' : 'none'} /></button><button onClick={() => addToCart(product)} className="absolute bottom-3 left-3 right-3 translate-y-2 rounded-full bg-white py-2.5 text-xs font-bold text-black opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100"><Plus className="mr-1 inline size-3" /> Ajouter au panier</button></div><p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-[#e51b2b]">{product.category}</p><h3 className="mt-1 truncate text-sm font-semibold">{product.name}</h3><div className="mt-1 flex items-center gap-2"><span className="font-bold">{product.price}</span>{product.oldPrice && <span className="text-xs text-white/35 line-through">{product.oldPrice}</span>}</div></article>)}</div></div></section>
 
