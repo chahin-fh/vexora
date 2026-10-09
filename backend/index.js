@@ -68,7 +68,7 @@ function requireAdminAccess(req, res, next) {
   return next()
 }
 
-const orderStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
+const orderStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'archived', 'cancelled']
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, message: 'Vexora backend is running', timestamp: new Date().toISOString() })
