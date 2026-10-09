@@ -6,6 +6,7 @@ export type Product = {
   id: number
   name: string
   category: string
+  quantity: number
   price: string
   oldPrice: string
   badge: string
@@ -39,4 +40,3 @@ export function useProducts() {
 
   return { products, loading, error }
 }
-

@@ -75,6 +75,7 @@ export default function AdminProducts({ adminKey, refreshVersion }: AdminProduct
     setSuccess('')
     setFormValue('name', product.name)
     setFormValue('category', product.category)
+    setFormValue('quantity', String(product.quantity))
     setFormValue('badge', product.badge)
     setFormValue('price', product.price.replace(/[^\d,.-]/g, '').replace(',', '.'))
     setFormValue('oldPrice', product.oldPrice.replace(/[^\d,.-]/g, '').replace(',', '.'))
@@ -107,6 +108,7 @@ export default function AdminProducts({ adminKey, refreshVersion }: AdminProduct
           ...(editingProduct ? { id: editingProduct.id } : {}),
           name: form.get('name'),
           category: form.get('category'),
+          quantity: form.get('quantity'),
           price: form.get('price'),
           oldPrice: form.get('oldPrice'),
           badge: form.get('badge'),
@@ -170,6 +172,7 @@ export default function AdminProducts({ adminKey, refreshVersion }: AdminProduct
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-xs font-semibold text-[#555b54] sm:col-span-2">Nom du produit<input name="name" required maxLength={160} className={inputClass} placeholder="Ex. Lampe design Aura" /></label>
           <label className="text-xs font-semibold text-[#555b54]">Catégorie<input name="category" required maxLength={100} className={inputClass} placeholder="Maison" /></label>
+          <label className="text-xs font-semibold text-[#555b54]">Quantité en stock<input name="quantity" type="number" min="0" max="4294967295" step="1" required className={inputClass} placeholder="0" /></label>
           <label className="text-xs font-semibold text-[#555b54]">Badge<input name="badge" maxLength={60} className={inputClass} placeholder="Nouveau" /></label>
           <label className="text-xs font-semibold text-[#555b54]">Prix (DT)<input name="price" type="number" min="0.001" step="0.001" required className={inputClass} placeholder="79.000" /></label>
           <label className="text-xs font-semibold text-[#555b54]">Ancien prix (DT)<input name="oldPrice" type="number" min="0.001" step="0.001" className={inputClass} placeholder="99.000" /></label>
@@ -189,7 +192,7 @@ export default function AdminProducts({ adminKey, refreshVersion }: AdminProduct
       <section>
         <div className="mb-3 flex items-center gap-2"><Package className="size-4 text-[#a61925]" /><h3 className="font-bold">Produits enregistrés</h3><RefreshCw className={`ml-auto size-4 text-[#858a82] ${loading ? 'animate-spin' : ''}`} /></div>
         {loading && products.length === 0 ? <p className="border-y border-[#d9dbd4] py-10 text-center text-sm text-[#747a71]">Chargement des produits…</p> : products.length === 0 ? <p className="border-y border-[#d9dbd4] py-10 text-center text-sm text-[#747a71]">Aucun produit enregistré.</p> : <div className="divide-y divide-[#e6e7e1] border-y border-[#d9dbd4]">
-          {products.map((product) => <article key={product.id} className="flex items-center gap-3 py-3"><img src={product.image} alt="" className="size-14 shrink-0 rounded-md bg-white object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{product.name}</p><p className="mt-1 text-xs text-[#7b8078]">{product.category}{product.badge ? ` · ${product.badge}` : ''}</p><p className="mt-1 text-xs font-semibold tabular-nums">{product.price}{product.oldPrice ? <span className="ml-2 font-normal text-[#858a82] line-through">{product.oldPrice}</span> : null}</p></div><div className="flex shrink-0 items-center gap-1"><button type="button" onClick={() => startEditing(product)} title={`Modifier ${product.name}`} aria-label={`Modifier ${product.name}`} className="grid size-9 place-items-center rounded-md border border-[#e1e2dc] text-[#555b54] hover:bg-[#f4f4f1]"><Pencil className="size-4" /></button><button type="button" onClick={() => void deleteProduct(product)} disabled={deletingId === product.id} title={`Supprimer ${product.name}`} aria-label={`Supprimer ${product.name}`} className="grid size-9 place-items-center rounded-md border border-[#f1d2d4] text-[#a61925] hover:bg-rose-50 disabled:opacity-50"><Trash2 className={`size-4 ${deletingId === product.id ? 'animate-pulse' : ''}`} /></button></div></article>)}
+          {products.map((product) => <article key={product.id} className="flex items-center gap-3 py-3"><img src={product.image} alt="" className="size-14 shrink-0 rounded-md bg-white object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{product.name}</p><p className="mt-1 text-xs text-[#7b8078]">{product.category}{product.badge ? ` · ${product.badge}` : ''}</p><p className="mt-1 text-xs font-semibold tabular-nums">{product.price}{product.oldPrice ? <span className="ml-2 font-normal text-[#858a82] line-through">{product.oldPrice}</span> : null}</p><p className={`mt-1 text-xs font-semibold ${product.quantity ? 'text-emerald-700' : 'text-rose-700'}`}>{product.quantity} en stock</p></div><div className="flex shrink-0 items-center gap-1"><button type="button" onClick={() => startEditing(product)} title={`Modifier ${product.name}`} aria-label={`Modifier ${product.name}`} className="grid size-9 place-items-center rounded-md border border-[#e1e2dc] text-[#555b54] hover:bg-[#f4f4f1]"><Pencil className="size-4" /></button><button type="button" onClick={() => void deleteProduct(product)} disabled={deletingId === product.id} title={`Supprimer ${product.name}`} aria-label={`Supprimer ${product.name}`} className="grid size-9 place-items-center rounded-md border border-[#f1d2d4] text-[#a61925] hover:bg-rose-50 disabled:opacity-50"><Trash2 className={`size-4 ${deletingId === product.id ? 'animate-pulse' : ''}`} /></button></div></article>)}
         </div>}
       </section>
     </div>

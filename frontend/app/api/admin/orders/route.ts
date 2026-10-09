@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-async function forwardAdminRequest(request: Request, method: 'GET' | 'PATCH') {
+async function forwardAdminRequest(request: Request, method: 'GET' | 'PATCH' | 'DELETE') {
   const adminKey = request.headers.get('x-admin-key')
   if (!adminKey) {
     return NextResponse.json({ error: 'La clé administrateur est requise.' }, { status: 401 })
@@ -14,7 +14,7 @@ async function forwardAdminRequest(request: Request, method: 'GET' | 'PATCH') {
         'Content-Type': 'application/json',
         'x-admin-key': adminKey,
       },
-      body: method === 'PATCH' ? await request.text() : undefined,
+      body: method === 'GET' ? undefined : await request.text(),
       cache: 'no-store',
       signal: AbortSignal.timeout(10000),
     })
@@ -31,6 +31,10 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   return forwardAdminRequest(request, 'PATCH')
+}
+
+export async function DELETE(request: Request) {
+  return forwardAdminRequest(request, 'DELETE')
 }
 
 export const runtime = 'nodejs'

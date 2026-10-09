@@ -19,6 +19,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  Trash2,
   Truck,
 } from 'lucide-react'
 import AdminProducts from '@/components/admin-products'
@@ -88,6 +89,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshVersion, setRefreshVersion] = useState(0)
@@ -168,12 +170,38 @@ export default function AdminPage() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Impossible de modifier cette commande.')
       setOrders((current) => current.map((order) => order.id === orderId ? result.order : order))
+      if (status === 'cancelled') {
+        setStatusFilter('all')
+        setOrderView('archive')
+      }
       return true
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue.')
       return false
     } finally {
       setUpdatingOrder(null)
+    }
+  }
+
+  async function deleteOrder(order: Order) {
+    const reference = order.id.slice(0, 8).toUpperCase()
+    if (!window.confirm(`Supprimer définitivement la commande #${reference} de ${order.customer_name} ? Cette action est irréversible.`)) return
+    setDeletingOrder(order.id)
+    setError('')
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ id: order.id }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de supprimer cette commande.')
+      setOrders((current) => current.filter((item) => item.id !== order.id))
+      if (expandedOrder === order.id) setExpandedOrder(null)
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue.')
+    } finally {
+      setDeletingOrder(null)
     }
   }
 
@@ -300,7 +328,8 @@ export default function AdminPage() {
   }
 
   const filteredOrders = orders.filter((order) => {
-    const matchesView = orderView === 'archive' ? order.status === 'archived' : order.status !== 'archived'
+    const isArchived = order.status === 'archived' || order.status === 'cancelled'
+    const matchesView = orderView === 'archive' ? isArchived : !isArchived
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
     const searchText = `${order.customer_name} ${order.phone} ${order.city} ${order.id}`.toLowerCase()
     return matchesView && matchesStatus && searchText.includes(search.toLowerCase().trim())
@@ -432,11 +461,12 @@ export default function AdminPage() {
                           <span className="text-xs font-semibold tabular-nums">{formatTotal(order.total)}</span>
                           <label className={`inline-flex items-center rounded-full px-2.5 py-1 ring-1 ring-inset ${statusStyles[order.status]}`}>
                             <span className="sr-only">Statut de la commande</span>
-                            <select value={order.status} disabled={updatingOrder === order.id} onChange={(event) => void updateStatus(order.id, event.target.value as OrderStatus)} className="max-w-36 cursor-pointer bg-transparent text-[11px] font-semibold outline-none disabled:opacity-50">
+                            <select value={order.status} disabled={updatingOrder === order.id || deletingOrder === order.id} onChange={(event) => void updateStatus(order.id, event.target.value as OrderStatus)} className="max-w-36 cursor-pointer bg-transparent text-[11px] font-semibold outline-none disabled:opacity-50">
                               {order.status === 'archived' ? <option value="archived">Livrée · archivée</option> : statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                             </select>
                           </label>
-                          {orderView === 'active' && order.status !== 'cancelled' && <button type="button" onClick={() => void invoiceAndArchive(order)} disabled={updatingOrder === order.id} title="Télécharger la facture et archiver comme livrée" className="inline-flex items-center gap-1.5 rounded-md border border-[#d9dbd4] px-3 py-2 text-xs font-semibold text-[#343a33] transition hover:bg-[#f4f4f1] disabled:opacity-50"><FileDown className="size-4" /> Facture PDF · archiver</button>}
+                          {order.status !== 'cancelled' && order.status !== 'archived' && <button type="button" onClick={() => void invoiceAndArchive(order)} disabled={updatingOrder === order.id || deletingOrder === order.id} title="Télécharger la facture et archiver comme livrée" className="inline-flex items-center gap-1.5 rounded-md border border-[#d9dbd4] px-3 py-2 text-xs font-semibold text-[#343a33] transition hover:bg-[#f4f4f1] disabled:opacity-50"><FileDown className="size-4" /> Facture PDF · archiver</button>}
+                          <button type="button" onClick={() => void deleteOrder(order)} disabled={updatingOrder === order.id || deletingOrder === order.id} title="Supprimer la commande" aria-label={`Supprimer la commande ${order.id.slice(0, 8).toUpperCase()}`} className="grid size-9 place-items-center rounded-md border border-rose-200 text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"><Trash2 className={`size-4 ${deletingOrder === order.id ? 'animate-pulse' : ''}`} /></button>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eff0ec] pt-3">
